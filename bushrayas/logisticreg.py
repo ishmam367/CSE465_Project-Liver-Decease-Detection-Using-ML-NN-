@@ -1,52 +1,33 @@
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-filepath = 'indian_liver_patient.csv'
-data = pd.read_csv(filepath)
-data.head()
-from matplotlib import pyplot as plt
-%matplotlib inline
+import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sns
-data1 = data[data['Dataset']==2] # no disease (original dataset had it labelled as 2 and not 0)
-data1 = data1.iloc[:,:-1]
+df = pd.read_csv("indian_liver_patient.csv")
+df.head()
+df.info()
+df['Dataset'].unique()
+df.describe()
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+df['Gender'] = le.fit_transform(df['Gender'])
+df.head()
+df['Albumin_and_Globulin_Ratio'].isna().sum() 
+df['Albumin_and_Globulin_Ratio'].hist()
+df['Albumin_and_Globulin_Ratio'].fillna(df['Albumin_and_Globulin_Ratio'].mean(), inplace = True)
+corr = df.corr()
+sns.heatmap(corr)
+X = df.drop(['Dataset'], axis = 1)
 
-data2 = data[data['Dataset']==1] # with disease
-data2 = data2.iloc[:,:-1]
+Y = df['Dataset']
 
-fig = plt.figure(figsize=(10,15))
-
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212,sharex=ax1)
-
-ax1.grid()
-ax2.grid()
-
-ax1.set_title('Features vs mean values',fontsize=13,weight='bold')
-ax1.text(200,0.8,'NO DISEASE',fontsize=20,horizontalalignment='center',color='green',weight='bold')
-
-
-ax2.set_title('Features vs mean values',fontsize=13,weight='bold')
-ax2.text(200,0.8,'DISEASE',fontsize=20,horizontalalignment='center',color='red',weight='bold')
-
-
-plt.sca(ax1)
-plt.xticks(rotation = 0, 
-           weight='bold', 
-           family='monospace',
-           size='large')
-plt.yticks( weight='bold', 
-           family='monospace',
-           size='large')
-
-plt.sca(ax2)
-plt.xticks(rotation = 0, 
-           weight='bold', 
-           family='monospace',
-           size='large')
-plt.yticks( weight='bold', 
-           family='monospace',
-           size='large')
-
-
-
-sns.barplot(data=data1,ax=ax1,orient='horizontal', palette='bright') # no disease
-sns.barplot(data=data2,ax=ax2,orient='horizontal',palette='bright',saturation=0.80) 
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
+logreg = LogisticRegression()
+logreg.fit(X_train, y_train)
+y_pred = logreg.predict(X_test)
+print('Accuracy of logistic regression classifier on test set: {:.2f}'.format(logreg.score(X_test, y_test)))
+from sklearn.metrics import confusion_matrix, classification_report
+confusion_matrix = confusion_matrix(y_test, y_pred)
+print(confusion_matrix)
+print(classification_report(y_pred, y_test))
+sns.countplot(df['Dataset'])
